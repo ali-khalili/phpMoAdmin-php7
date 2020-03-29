@@ -6,7 +6,7 @@ h3. Built on a stripped-down version of the high-performance Vork Enterprise Fra
 
     "phpMoAdmin":http://www.phpMoAdmin.com - "MongoDB":http://www.MongoDB.org - "Vork":http://www.Vork.us
 
-    * *Nothing to configure* - place the moadmin.php file anywhere on your web site and *it just works!*
+    * place the moadmin.php file anywhere on your web site and run `composer install` (it requires PHP7 and mongodb extension to be installed)
     * Fast *AJAX-driven XHTML 1.1* interface operates consistently in every browser!
     * *Self-contained in a single 110kb file!*
     * Works on any version of PHP5 or PHP7 with the MongoDB NoSQL database & Mongo PHP driver installed and running.

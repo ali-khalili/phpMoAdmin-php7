@@ -1,4 +1,7 @@
 <?php error_reporting(E_ALL | E_STRICT);
+
+require './vendor/autoload.php';
+
 /**
  * phpMoAdmin - built on a stripped-down version of the high-performance Vork Enterprise Framework
  *
@@ -21,7 +24,7 @@
  * Uncomment to restrict databases-access to just the databases added to the array below
  * uncommenting will also remove the ability to create a new database
  */
-//moadminModel::$databaseWhitelist = array('admin');
+//MongoAdminModel::$databaseWhitelist = array('admin');
 
 /**
  * Sets the design theme - themes options are: swanky-purse, trontastic, simple-gray and classic
@@ -269,10 +272,15 @@ class mongoExtensionNotInstalled extends Exception {
 /**
  * phpMoAdmin data model
  */
-class moadminModel {
+
+/**
+ * phpMoAdmin data model
+ */
+class MongoAdminModel
+{
     /**
      * mongo connection - if a MongoDB object already exists (from a previous script) then only DB operations use this
-     * @var Mongo
+     * @var MongoDB\Client
      */
     protected $_db;
 
@@ -283,39 +291,37 @@ class moadminModel {
     public static $dbName = 'admin';
 
     /**
-     * MongoDB
-     * @var MongoDB
+     * MongoDB database
+     * @var MongoDB\Database
      */
     public $mongo;
 
     /**
      * Returns a new Mongo connection
-     * @return Mongo
+     * @return MongoDB\Client
      */
-    protected function _mongo() {
+    protected function _mongo()
+    {
         $connection = (!MONGO_CONNECTION ? 'mongodb://localhost:27017' : MONGO_CONNECTION);
-        $Mongo = (class_exists('MongoClient') === true ? 'MongoClient' : 'Mongo');
-        return (!REPLICA_SET ? new $Mongo($connection) : new $Mongo($connection, array('replicaSet' => true)));
+        return new MongoDB\Client($connection);
     }
 
     /**
      * Connects to a Mongo database if the name of one is supplied as an argument
      * @param string $db
+     * @throws mongoExtensionNotInstalled
      */
-    public function __construct($db = null) {
+    public function __construct($db = null)
+    {
         if (self::$databaseWhitelist && !in_array($db, self::$databaseWhitelist)) {
             $db = self::$dbName = $_GET['db'] = current(self::$databaseWhitelist);
         }
         if ($db) {
-            if (!extension_loaded('mongo')) {
+            if (!extension_loaded('mongodb')) {
                 throw new mongoExtensionNotInstalled();
             }
-            try {
-                $this->_db = $this->_mongo();
-                $this->mongo = $this->_db->selectDB($db);
-            } catch (MongoConnectionException $e) {
-                throw new cannotConnectToMongoServer();
-            }
+            $this->_db = $this->_mongo();
+            $this->mongo = $this->_db->selectDatabase($db);
         }
     }
 
@@ -325,7 +331,8 @@ class moadminModel {
      * @param string $cmd
      * @return mixed
      */
-    protected function _exec($cmd) {
+    protected function _exec($cmd)
+    {
         $exec = $this->mongo->execute($cmd);
         return $exec['retval'];
     }
@@ -334,14 +341,15 @@ class moadminModel {
      * Change the DB connection
      * @param string $db
      */
-    public function setDb($db) {
+    public function setDb($db)
+    {
         if (self::$databaseWhitelist && !in_array($db, self::$databaseWhitelist)) {
             $db = current(self::$databaseWhitelist);
         }
         if (!isset($this->_db)) {
             $this->_db = $this->_mongo();
         }
-        $this->mongo = $this->_db->selectDB($db);
+        $this->mongo = $this->_db->selectDatabase($db);
         self::$dbName = $db;
     }
 
@@ -361,15 +369,16 @@ class moadminModel {
      * Gets list of databases
      * @return array
      */
-    public function listDbs() {
+    public function listDbs()
+    {
         $return = array();
-        $restrictDbs = (bool) self::$databaseWhitelist;
-        $dbs = $this->_db->selectDB('admin')->command(array('listDatabases' => 1));
-        $this->totalDbSize = $dbs['totalSize'];
-        foreach ($dbs['databases'] as $db) {
+        $restrictDbs = (bool)self::$databaseWhitelist;
+        $dbs = $this->_db->selectDatabase('admin')->command(array('listDatabases' => 1))->toArray()[0];
+        $this->totalDbSize = $dbs->totalSize;
+        foreach ($dbs->databases as $db) {
             if (!$restrictDbs || in_array($db['name'], self::$databaseWhitelist)) {
                 $return[$db['name']] = $db['name'] . ' ('
-                                     . (!$db['empty'] ? round($db['sizeOnDisk'] / 1000000) . 'mb' : 'empty') . ')';
+                    . (!$db['empty'] ? round($db['sizeOnDisk'] / 1000000) . 'mb' : 'empty') . ')';
             }
         }
         ksort($return);
@@ -384,31 +393,34 @@ class moadminModel {
      * Generate system info and stats
      * @return array
      */
-    public function getStats() {
-        $admin = $this->_db->selectDB('admin');
-        $return = $admin->command(array('buildinfo' => 1));
-        try {
-            $return = array_merge($return, $admin->command(array('serverStatus' => 1)));
-        } catch (MongoCursorException $e) {}
-        $profile = $admin->command(array('profile' => -1));
+    public function getStats()
+    {
+        $admin = $this->_db->selectDatabase('admin');
+        $return = $admin->command(array('buildinfo' => 1))->toArray();
+        $return = array_merge($return, $admin->command(array('serverStatus' => 1)));
+        $profile = $admin->command(array('profile' => -1))->toArray()[0];
         $return['profilingLevel'] = $profile['was'];
         $return['mongoDbTotalSize'] = round($this->totalDbSize / 1000000) . 'mb';
-        $prevError = $admin->command(array('getpreverror' => 1));
-        if (!$prevError['n']) {
-            $return['previousDbErrors'] = 'None';
-        } else {
-            $return['previousDbErrors']['error'] = $prevError['err'];
-            $return['previousDbErrors']['numberOfOperationsAgo'] = $prevError['nPrev'];
-        }
+//        $prevError = $admin->command(array('getpreverror' => 1));
+//        if (!$prevError['n']) {
+//            $return['previousDbErrors'] = 'None';
+//        } else {
+//            $return['previousDbErrors']['error'] = $prevError['err'];
+//            $return['previousDbErrors']['numberOfOperationsAgo'] = $prevError['nPrev'];
+//        }
         if (isset($return['globalLock']['totalTime'])) {
             $return['globalLock']['totalTime'] .= ' &#0181;Sec';
         }
         if (isset($return['uptime'])) {
             $return['uptime'] = round($return['uptime'] / 60) . ':' . str_pad($return['uptime'] % 60, 2, '0', STR_PAD_LEFT)
-                              . ' minutes';
+                . ' minutes';
         }
         $unshift['mongo'] = $return['version'] . ' (' . $return['bits'] . '-bit)';
-        $unshift['mongoPhpDriver'] = Mongo::VERSION;
+//        $result = $this->mongo->command(['serverStatus' => 1, 'repl' => 1, 'version' => 1])->toArray();
+//        $this->mongo->getManager()->executeQuery()
+//        var_dump($return);
+//        die;
+//        $unshift['mongoPhpDriver'] = MongoDB::VERSION;
         $unshift['phpMoAdmin'] = '1.1.4';
         $unshift['php'] = PHP_VERSION . ' (' . (PHP_INT_MAX > 2200000000 ? 64 : 32) . '-bit)';
         $unshift['gitVersion'] = $return['gitVersion'];
@@ -416,7 +428,7 @@ class moadminModel {
         $return = array_merge(array('version' => $unshift), $return);
         $iniIndex = array(-1 => 'Unlimited', 'Off', 'On');
         $phpIni = array('allow_persistent', 'auto_reconnect', 'chunk_size', 'cmd', 'default_host', 'default_port',
-                        'max_connections', 'max_persistent');
+            'max_connections', 'max_persistent');
         foreach ($phpIni as $ini) {
             $key = 'php_' . $ini;
             $return[$key] = ini_get('mongo.' . $ini);
@@ -428,35 +440,27 @@ class moadminModel {
     }
 
     /**
-     * Repairs a database
-     * @return array Success status
-     */
-    public function repairDb() {
-        return $this->mongo->repair();
-    }
-
-    /**
      * Drops a database
      */
-    public function dropDb() {
+    public function dropDb()
+    {
         $this->mongo->drop();
-        return;
-        if (!isset($this->_db)) {
-            $this->_db = $this->_mongo();
-        }
-        $this->_db->dropDB($this->mongo);
     }
 
     /**
      * Gets a list of database collections
      * @return array
+     * @throws Exception
      */
-    public function listCollections() {
+    public function listCollections()
+    {
         $collections = array();
         $MongoCollectionObjects = $this->mongo->listCollections();
         foreach ($MongoCollectionObjects as $collection) {
-            $collection = substr(strstr((string) $collection, '.'), 1);
-            $collections[$collection] = $this->mongo->selectCollection($collection)->count();
+            $collectionName = $collection->getName();
+//            var_dump($collectionName);
+//            $collection = substr(strstr((string)$collection, '.'), 1);
+            $collections[$collectionName] = $this->mongo->selectCollection($collectionName)->count();
         }
         ksort($collections);
         return $collections;
@@ -466,7 +470,8 @@ class moadminModel {
      * Drops a collection
      * @param string $collection
      */
-    public function dropCollection($collection) {
+    public function dropCollection($collection)
+    {
         $this->mongo->selectCollection($collection)->drop();
     }
 
@@ -474,7 +479,8 @@ class moadminModel {
      * Creates a collection
      * @param string $collection
      */
-    public function createCollection($collection) {
+    public function createCollection($collection)
+    {
         if ($collection) {
             $this->mongo->createCollection($collection);
         }
@@ -485,9 +491,11 @@ class moadminModel {
      *
      * @param string $from
      * @param string $to
+     * @return \MongoDB\Driver\Cursor
      */
-    public function renameCollection($from, $to) {
-        $result = $this->_db->selectDB('admin')->command(array(
+    public function renameCollection($from, $to)
+    {
+        return $this->_db->selectDatabase('admin')->command(array(
             'renameCollection' => self::$dbName . '.' . $from,
             'to' => self::$dbName . '.' . $to,
         ));
@@ -497,10 +505,11 @@ class moadminModel {
      * Gets a list of the indexes on a collection
      *
      * @param string $collection
-     * @return array
+     * @return \MongoDB\Model\IndexInfoIterator
      */
-    public function listIndexes($collection) {
-        return $this->mongo->selectCollection($collection)->getIndexInfo();
+    public function listIndexes($collection)
+    {
+        return $this->mongo->selectCollection($collection)->listIndexes();
     }
 
     /**
@@ -508,11 +517,12 @@ class moadminModel {
      *
      * @param string $collection
      * @param array $indexes
-     * @param array $unique
+     * @param boolean $unique
      */
-    public function ensureIndex($collection, array $indexes, array $unique) {
-        $unique = ($unique ? true : false); //signature requires a bool in both Mongo v. 1.0.1 and 1.2.0
-        $this->mongo->selectCollection($collection)->ensureIndex($indexes, $unique);
+    public function ensureIndex($collection, array $indexes, $unique)
+    {
+        $option = ($unique ? ['unique' => true] : []);
+        $this->mongo->selectCollection($collection)->createIndex($indexes, $option);
     }
 
     /**
@@ -521,8 +531,9 @@ class moadminModel {
      * @param string $collection
      * @param array $index Must match the array signature of the index
      */
-    public function deleteIndex($collection, array $index) {
-        $this->mongo->selectCollection($collection)->deleteIndex($index);
+    public function deleteIndex($collection, array $index)
+    {
+        $this->mongo->selectCollection($collection)->dropIndexes($index);
     }
 
     /**
@@ -532,7 +543,7 @@ class moadminModel {
     public $sort = array('_id' => 1);
 
     /**
-     * Number of rows in the entire resultset (before limit-clause is applied)
+     * Number of rows in the entire result set (before limit-clause is applied)
      * @var int
      */
     public $count;
@@ -546,14 +557,15 @@ class moadminModel {
     /**
      * Get the records in a collection
      *
-     * @param string $collection
+     * @param string $collectionName
      * @return array
      */
-    public function listRows($collection) {
-        foreach ($this->sort as $key => $val) { //cast vals to int
-            $sort[$key] = (int) $val;
+    public function listRows($collectionName)
+    {
+        foreach ($this->sort as $key => $val) { //cast values to int
+            $sort[$key] = (int)$val;
         }
-        $col = $this->mongo->selectCollection($collection);
+        $collection = $this->mongo->selectCollection($collectionName);
 
         $find = array();
         if (isset($_GET['find']) && $_GET['find']) {
@@ -578,7 +590,7 @@ class moadminModel {
                     break;
                 case '(':
                     $types = array('bool', 'boolean', 'int', 'integer', 'float', 'double', 'string', 'array', 'object',
-                                   'null', 'mongoid');
+                        'null', 'mongoid');
                     $closeParentheses = strpos($_GET['search'], ')');
                     if ($closeParentheses) {
                         $cast = strtolower(substr($_GET['search'], 1, ($closeParentheses - 1)));
@@ -598,7 +610,7 @@ class moadminModel {
                         if (!is_numeric($_GET['search'])) {
                             $find[$_GET['searchField']] = $_GET['search'];
                         } else { //$_GET is always a string-type
-                            $in = array((string) $_GET['search'], (int) $_GET['search'], (float) $_GET['search']);
+                            $in = array((string)$_GET['search'], (int)$_GET['search'], (float)$_GET['search']);
                             $find[$_GET['searchField']] = array('$in' => $in);
                         }
                     } else { //text with wildcards
@@ -609,38 +621,43 @@ class moadminModel {
             }
         }
 
-        $cols = (!isset($_GET['cols']) ? array() : array_fill_keys($_GET['cols'], true));
-        $cur = $col->find($find, $cols)->sort($sort);
-        $this->count = $cur->count();
+        $options = (!isset($_GET['cols']) ? array() : array_fill_keys($_GET['cols'], true));
+        //TODO: fix these three lines
+//        $cur = $col->find($find, $cols)->sort($sort);
+        $this->count = $collection->count($find);
 
         //get keys of first object
         if ($_SESSION['limit'] && $this->count > $_SESSION['limit'] //more results than per-page limit
             && (!isset($_GET['export']) || $_GET['export'] != 'nolimit')) {
             if ($this->count > 1) {
-                $this->colKeys = phpMoAdmin::getArrayKeys($col->findOne());
+                $this->colKeys = phpMoAdmin::getArrayKeys($collection->findOne());
             }
-            $cur->limit($_SESSION['limit']);
+            $options['limit'] = $_SESSION['limit'];
+//            $cur->limit($_SESSION['limit']);
             if (isset($_GET['skip'])) {
                 if ($this->count <= $_GET['skip']) {
                     $_GET['skip'] = ($this->count - $_SESSION['limit']);
                 }
-                $cur->skip($_GET['skip']);
+//                $cur->skip($_GET['skip']);
+                $options['skip'] = $_GET['skip'];
             }
         } else if ($this->count) { // results exist but are fewer than per-page limit
-            $this->colKeys = phpMoAdmin::getArrayKeys($cur->getNext());
-        } else if ($find && $col->count()) { //query is not returning anything, get cols from first obj in collection
-            $this->colKeys = phpMoAdmin::getArrayKeys($col->findOne());
+//            $this->colKeys = phpMoAdmin::getArrayKeys($cur->getNext());
+        } else if ($find && $collection->count()) { //query is not returning anything, get cols from first obj in collection
+//            $this->colKeys = phpMoAdmin::getArrayKeys($collection->findOne());
         }
+        $cur = $collection->find($find, $options)->toArray();
 
-        //get keys of last or much-later object
-        if ($this->count > 1) {
-            $curLast = $col->find()->sort($sort);
-            if ($this->count > 2) {
-                $curLast->skip(min($this->count, 100) - 1);
-            }
-            $this->colKeys = array_merge($this->colKeys, phpMoAdmin::getArrayKeys($curLast->getNext()));
-            ksort($this->colKeys);
-        }
+//
+//        //get keys of last or much-later object
+//        if ($this->count > 1) {
+//            $curLast = $collection->find()->sort($sort);
+//            if ($this->count > 2) {
+//                $curLast->skip(min($this->count, 100) - 1);
+//            }
+//            $this->colKeys = array_merge($this->colKeys, phpMoAdmin::getArrayKeys($curLast->getNext()));
+//            ksort($this->colKeys);
+//        }
         return $cur;
     }
 
@@ -648,20 +665,21 @@ class moadminModel {
      * Returns a serialized element back to its native PHP form
      *
      * @param string $_id
-     * @param string $idtype
+     * @param string $idType
      * @return mixed
      */
-    protected function _unserialize($_id, $idtype) {
-        if ($idtype == 'object' || $idtype == 'array') {
+    protected function _unserialize($_id, $idType)
+    {
+        if ($idType == 'object' || $idType == 'array') {
             $errLevel = error_reporting();
-            error_reporting(0); //unserializing an object that is not serialized throws a warning
+            error_reporting(0); //un-serializing an object that is not serialized throws a warning
             $_idObj = unserialize($_id);
             error_reporting($errLevel);
             if ($_idObj !== false) {
                 $_id = $_idObj;
             }
-        } else if (gettype($_id) != $idtype) {
-            settype($_id, $idtype);
+        } else if (gettype($_id) != $idType) {
+            settype($_id, $idType);
         }
         return $_id;
     }
@@ -671,10 +689,11 @@ class moadminModel {
      *
      * @param string $collection
      * @param string $_id
-     * @param string $idtype
+     * @param string $idType
      */
-    public function removeObject($collection, $_id, $idtype) {
-        $this->mongo->selectCollection($collection)->remove(array('_id' => $this->_unserialize($_id, $idtype)));
+    public function removeObject($collection, $_id, $idType)
+    {
+        $this->mongo->selectCollection($collection)->deleteOne(array('_id' => $this->_unserialize($_id, $idType)));
     }
 
     /**
@@ -682,11 +701,12 @@ class moadminModel {
      *
      * @param string $collection
      * @param string $_id
-     * @param string $idtype
+     * @param string $idType
      * @return array
      */
-    public function editObject($collection, $_id, $idtype) {
-        return $this->mongo->selectCollection($collection)->findOne(array('_id' => $this->_unserialize($_id, $idtype)));
+    public function editObject($collection, $_id, $idType)
+    {
+        return $this->mongo->selectCollection($collection)->findOne(array('_id' => $this->_unserialize($_id, $idType)));
     }
 
     /**
@@ -696,9 +716,11 @@ class moadminModel {
      * @param string $obj
      * @return array
      */
-    public function saveObject($collection, $obj) {
-        eval('$obj=' . $obj . ';'); //cast from string to array
-        return $this->mongo->selectCollection($collection)->save($obj);
+    public function saveObject($collection, $obj)
+    {
+        $object = null;
+        eval('$object = (object)' . $obj . ';'); //cast from string to array
+        return $this->mongo->selectCollection($collection)->insertOne($object)->getInsertedId();
     }
 
     /**
@@ -708,7 +730,8 @@ class moadminModel {
      * @param array $data
      * @param string $importMethod Valid options are batchInsert, save, insert, update
      */
-    public function import($collection, array $data, $importMethod) {
+    public function import($collection, array $data, $importMethod)
+    {
         $coll = $this->mongo->selectCollection($collection);
         switch ($importMethod) {
             case 'batchInsert':
@@ -734,7 +757,7 @@ class moadminModel {
                 foreach ($data as $obj) {
                     $coll->$importMethod(unserialize($obj));
                 }
-            break;
+                break;
         }
     }
 }
@@ -751,7 +774,7 @@ class moadminComponent {
 
     /**
      * Model object
-     * @var moadminModel
+     * @var MongoAdminModel
      */
     public static $model;
 
@@ -2005,12 +2028,12 @@ $form = new formHelper;
 
 if ($isAuthenticated) {
     if (!isset($_GET['db'])) {
-        $_GET['db'] = moadminModel::$dbName;
+        $_GET['db'] = MongoAdminModel::$dbName;
     } else if (strpos($_GET['db'], '.') !== false) {
         $_GET['db'] = $_GET['newdb'];
     }
     try {
-        moadminComponent::$model = new moadminModel($_GET['db']);
+        moadminComponent::$model = new MongoAdminModel($_GET['db']);
     } catch(Exception $e) {
         echo $e;
         exit(0);
@@ -2227,7 +2250,7 @@ mo.dropDatabase = function(db) {
         });
     });
 }';
-if (!moadminModel::$databaseWhitelist) {
+if (!MongoAdminModel::$databaseWhitelist) {
     $js .= '
 $("select[name=db]").prepend(\'<option value="new.database">Use new ==&gt;</option>\')'
     . '.after(\'<input type="text" name="newdb" name style="display: none;" />\').change(function() {
@@ -2385,7 +2408,7 @@ if (isset($mo->mongo['listRows'])) {
     echo $form->close();
     echo '</div>';
 
-    $objCount = $mo->mongo['listRows']->count(true); //count of rows returned
+    $objCount = count($mo->mongo['listRows']); //count of rows returned
     $paginator = number_format($mo->mongo['count']) . ' objects'; //count of rows in collection
     if ($objCount && $mo->mongo['count'] != $objCount) {
         $skip = (isset($_GET['skip']) ? $_GET['skip'] : 0);
