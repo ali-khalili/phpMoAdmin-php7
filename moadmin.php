@@ -272,10 +272,6 @@ class mongoExtensionNotInstalled extends Exception {
 /**
  * phpMoAdmin data model
  */
-
-/**
- * phpMoAdmin data model
- */
 class MongoAdminModel
 {
     /**
@@ -458,8 +454,6 @@ class MongoAdminModel
         $MongoCollectionObjects = $this->mongo->listCollections();
         foreach ($MongoCollectionObjects as $collection) {
             $collectionName = $collection->getName();
-//            var_dump($collectionName);
-//            $collection = substr(strstr((string)$collection, '.'), 1);
             $collections[$collectionName] = $this->mongo->selectCollection($collectionName)->count();
         }
         ksort($collections);
@@ -623,23 +617,20 @@ class MongoAdminModel
 
         $options = (!isset($_GET['cols']) ? array() : array_fill_keys($_GET['cols'], true));
         //TODO: fix these three lines
-//        $cur = $col->find($find, $cols)->sort($sort);
         $this->count = $collection->count($find);
 
         //get keys of first object
         if ($_SESSION['limit'] && $this->count > $_SESSION['limit'] //more results than per-page limit
             && (!isset($_GET['export']) || $_GET['export'] != 'nolimit')) {
             if ($this->count > 1) {
-                $this->colKeys = phpMoAdmin::getArrayKeys($collection->findOne());
+                $this->colKeys = [];//phpMoAdmin::getArrayKeys($collection->findOne()->jsonSerialize());
             }
-            $options['limit'] = $_SESSION['limit'];
-//            $cur->limit($_SESSION['limit']);
+            $options['limit'] = intval($_SESSION['limit']);
             if (isset($_GET['skip'])) {
                 if ($this->count <= $_GET['skip']) {
                     $_GET['skip'] = ($this->count - $_SESSION['limit']);
                 }
-//                $cur->skip($_GET['skip']);
-                $options['skip'] = $_GET['skip'];
+                $options['skip'] = intval($_GET['skip']);
             }
         } else if ($this->count) { // results exist but are fewer than per-page limit
 //            $this->colKeys = phpMoAdmin::getArrayKeys($cur->getNext());
@@ -697,7 +688,7 @@ class MongoAdminModel
     }
 
     /**
-     * Retieves an object for editing
+     * Retrieves an object for editing
      *
      * @param string $collection
      * @param string $_id
@@ -726,19 +717,19 @@ class MongoAdminModel
     /**
      * Imports data into the current collection
      *
-     * @param string $collection
+     * @param string $collectionName
      * @param array $data
      * @param string $importMethod Valid options are batchInsert, save, insert, update
      */
-    public function import($collection, array $data, $importMethod)
+    public function import($collectionName, array $data, $importMethod)
     {
-        $coll = $this->mongo->selectCollection($collection);
+        $collection = $this->mongo->selectCollection($collectionName);
         switch ($importMethod) {
             case 'batchInsert':
                 foreach ($data as &$obj) {
                     $obj = unserialize($obj);
                 }
-                $coll->$importMethod($data);
+                $collection->batchInsert($data);
                 break;
             case 'update':
                 foreach ($data as $obj) {
@@ -750,12 +741,12 @@ class MongoAdminModel
                     } else {
                         continue;
                     }
-                    $coll->$importMethod(array('_id' => $_id), $obj);
+                    $collection->updateOne(array('_id' => $_id), $obj);
                 }
                 break;
             default: //insert & save
                 foreach ($data as $obj) {
-                    $coll->$importMethod(unserialize($obj));
+                    $collection->insertOne((array)unserialize($obj));
                 }
                 break;
         }
@@ -788,6 +779,7 @@ class moadminComponent {
 
     /**
      * Routes requests and sets return data
+     * @throws Exception
      */
     public function __construct() {
         if (class_exists('mvc')) {
@@ -854,7 +846,7 @@ class moadminComponent {
         } else if ($action == 'getStats') {
             $this->mongo[$action] = self::$model->$action();
             unset($this->mongo['listCollections']);
-        } else if ($action == 'repairDb' || $action == 'getStats') {
+        } else if ($action == 'getStats') {
             $this->mongo[$action] = self::$model->$action();
             $action = 'listCollections';
         } else if ($action == 'dropDb') {
@@ -925,6 +917,7 @@ class htmlHelper {
      * @param string $tagType
      * @param array $args
      * @return string
+     * @throws Exception
      */
     protected function _tagBuilder($tagType, $args = array()) {
         $arg = current($args);
@@ -1021,8 +1014,9 @@ class htmlHelper {
      * $html->css, js, cssInline, jsInline, div, li, p and h1-h4
      *
      * @param string $method
-     * @param array $arg
+     * @param array $args
      * @return string
+     * @throws Exception
      */
     public function __call($method, $args) {
         $validTags = array('css', 'js', 'cssSingleton', 'jsSingleton', 'jqueryTheme',
@@ -1239,7 +1233,7 @@ var dom = function(id) {
      *                       or JSON-decoded Google API syntax array(array('name' => 'yui', 'version' => 2), array(...))
      * @param mixed $version Optional, int or str, this is only used if $library is a string
      * @param array $options Optional, passed to Google "optionalSettings" argument, only used if $library == str
-     * @return str
+     * @return string
      */
     public function jsLoad($library, $version = null, array $options = array()) {
         $versionDefaults = array('swfobject' => 2, 'yui' => 2, 'ext-core' => 3, 'mootools' => 1.2);
@@ -1324,10 +1318,10 @@ var dom = function(id) {
     /**
      * Shortcut to access the anchor method
      *
-     * @param str $href
-     * @param str $text
+     * @param string $href
+     * @param string $text
      * @param array $args
-     * @return str
+     * @return string
      */
     public function link($href, $text = null, array $args = array()) {
         if (strpos($href, 'http') !== 0) {
@@ -1343,8 +1337,8 @@ var dom = function(id) {
     /**
      * Wrapper display computer-code samples
      *
-     * @param str $str
-     * @return str
+     * @param string $str
+     * @return string
      */
     public function code($str) {
         return '<code>' . str_replace('  ', '&nbsp;&nbsp;', nl2br(get::htmlentities($str))) . '</code>';
@@ -1575,8 +1569,8 @@ class formHelper {
      * Adds label tags to a form element
      *
      * @param array $args
-     * @param str $formElement
-     * @return str
+     * @param string $formElement
+     * @return string
      */
     protected function _getLabel(array $args, $formElement) {
         if (!isset($args['label']) && isset($args['name'])
@@ -1750,7 +1744,7 @@ class formHelper {
      * );
      *
      * @param array $args
-     * @return str
+     * @return string
      */
     public function select(array $args) {
         if (!isset($args['id'])) {
@@ -1848,7 +1842,7 @@ class formHelper {
      * )
      *
      * @param array $args
-     * @return str
+     * @return string
      */
     public function radios(array $args) {
         $id = (isset($args['id']) ? $args['id'] : $args['name']);
@@ -1907,7 +1901,7 @@ class formHelper {
      * that $args['value'] can also accept an array of values to be checked.
      *
      * @param array $args
-     * @return str
+     * @return string
      */
     public function checkboxes(array $args) {
         $args['type'] = 'checkbox';
@@ -2112,6 +2106,7 @@ li {line-height: 1.5; margin-left: 15px;}
 .ui-widget-header .rownumber {margin-top: 2px; margin-right: 0px;}
 pre {border: 1px solid; margin: 1px; padding-left: 5px;}
 li .ui-widget-content {margin: 1px 1px 3px 1px;}
+.text-danger { color: red !important; }
 #mongo_rows {padding-top: 10px;}
 #moadminlogo {color: #96f226; border: 0px solid; padding-left: 10px; font-size: 4px!important;
               width: 265px; height: 63px; overflow: hidden;}';
@@ -2217,17 +2212,16 @@ if (isset($accessControl) && !isset($_SESSION['user'])) {
 
 echo '<div id="dbcollnav">';
 $formArgs = array('method' => 'get');
-if (isset($mo->mongo['repairDb'])) {
-    $formArgs['alert'] = (isset($mo->mongo['repairDb']['ok']) && $mo->mongo['repairDb']['ok']
-                          ? 'Database has been repaired and compacted' : 'Database could not be repaired');
-}
+//if (isset($mo->mongo['repairDb'])) {
+//    $formArgs['alert'] = (isset($mo->mongo['repairDb']['ok']) && $mo->mongo['repairDb']['ok']
+//                          ? 'Database has been repaired and compacted' : 'Database could not be repaired');
+//}
 echo $form->open($formArgs);
 echo $html->div($form->select(array('name' => 'db', 'options' => $mo->mongo['dbs'], 'label' => '', 'value' => $db,
                                        'addBreak' => false))
               . $form->submit(array('value' => 'Change database', 'class' => 'ui-state-hover'))
               . ' <span style="font-size: xx-large;">' . get::htmlentities($db)
-              . '</span> [' . $html->link("javascript: mo.repairDatabase('" . get::htmlentities($db)
-              . "'); void(0);", 'repair database') . '] [' . $html->link("javascript: mo.dropDatabase('"
+              . '</span> [' . $html->link("javascript: mo.dropDatabase('"
               . get::htmlentities($db) . "'); void(0);", 'drop database') . ']');
 echo $form->close();
 
@@ -2236,11 +2230,11 @@ mo.urlEncode = function(str) {
     return escape(str)'
         . '.replace(/\+/g, "%2B").replace(/%20/g, "+").replace(/\*/g, "%2A").replace(/\//g, "%2F").replace(/@/g, "%40");
 }
-mo.repairDatabase = function(db) {
-    mo.confirm("Are you sure that you want to repair and compact the " + db + " database?", function() {
-        window.location.replace("' . $baseUrl . '?db=' . $dbUrl . '&action=repairDb");
-    });
-}
+//mo.repairDatabase = function(db) {
+//    mo.confirm("Are you sure that you want to repair and compact the " + db + " database?", function() {
+//        window.location.replace("' . $baseUrl . '?db=' . $dbUrl . '&action=repairDb");
+//    });
+//}
 mo.dropDatabase = function(db) {
     mo.confirm("Are you sure that you want to drop the " + db + " database?", function() {
         mo.confirm("All the collections in the " + db + " database will be lost along with all the data within them!'
@@ -2316,7 +2310,7 @@ if (isset($mo->mongo['listCollections'])) {
 $(document).ready(function() {
     $("#mongo_collections li").each(function() {
         $(this).prepend("[<a href=\"javascript: mo.collectionDrop(\'" + $(this).find("a").html() + "\'); void(0);\"'
-        . ' title=\"drop this collection\">X</a>] ");
+        . ' title=\"drop this collection\" class=\"text-danger\">X</a>] ");
     });
 });
 ');
