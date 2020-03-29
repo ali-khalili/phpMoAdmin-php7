@@ -1,5 +1,7 @@
 h1. phpMoAdmin
 
+This project is a fork of "phpMoAdmin":https://github.com/MongoDB-Rox/phpMoAdmin-MongoDB-Admin-Tool-for-PHP . I tried to make it work with PHP7 and *mongodb/mongodb* package (so, you would need to use composer to install the package).
+
 h2. MongoDB administration tool for PHP
 
 h3. Built on a stripped-down version of the high-performance Vork Enterprise Framework
