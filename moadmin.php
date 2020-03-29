@@ -744,27 +744,34 @@ class MongoAdminModel
         $collection = $this->mongo->selectCollection($collectionName);
         switch ($importMethod) {
             case 'batchInsert':
-                foreach ($data as &$obj) {
-                    $obj = unserialize($obj);
+                $allData = [];
+                foreach ($data as $obj) {
+                    $obj = (array)unserialize($obj);
+                    if (isset($obj['_id'])) {
+                        unset($obj['_id']);
+                    }
+                    $allData[] = $obj;
                 }
-                $collection->batchInsert($data);
+                $collection->insertMany($allData);
                 break;
             case 'update':
                 foreach ($data as $obj) {
-                    $obj = unserialize($obj);
-                    if (is_object($obj) && property_exists($obj, '_id')) {
-                        $_id = $obj->_id;
-                    } else if (is_array($obj) && isset($obj['_id'])) {
+                    $obj = (array)unserialize($obj);
+                    if (isset($obj['_id'])) {
                         $_id = $obj['_id'];
+                        $collection->updateOne(array('_id' => $_id), $obj);
                     } else {
                         continue;
                     }
-                    $collection->updateOne(array('_id' => $_id), $obj);
                 }
                 break;
             default: //insert & save
                 foreach ($data as $obj) {
-                    $collection->insertOne((array)unserialize($obj));
+                    $obj = (array)unserialize($obj);
+                    if (isset($obj['_id'])) {
+                        unset($obj['_id']);
+                    }
+                    $collection->insertOne($obj);
                 }
                 break;
         }
