@@ -57,7 +57,8 @@ define('DEBUG_MODE', false);
 /**
  * Vork core-functionality tools
  */
-class get {
+class get
+{
     /**
      * Opens up public access to config constants and variables and the cache object
      * @var object
@@ -86,7 +87,8 @@ class get {
      *                                             a true or false value implies abs=true
      * @return string
      */
-    public static function url(array $args = array()) {
+    public static function url(array $args = array())
+    {
         $ssl = null;
         $get = false;
         $abs = false;
@@ -131,11 +133,12 @@ class get {
      * @param boolean $doubleEncode This is ignored in old versions of PHP before 5.2.3
      * @return string
      */
-    public static function htmlentities($string, $quoteStyle = ENT_COMPAT, $charset = 'UTF-8', $doubleEncode = false) {
+    public static function htmlentities($string, $quoteStyle = ENT_COMPAT, $charset = 'UTF-8', $doubleEncode = false)
+    {
         $quoteStyle = (!is_null($quoteStyle) ? $quoteStyle : ENT_COMPAT);
         $charset = (!is_null($charset) ? $charset : 'UTF-8');
         return (self::$isPhp523orNewer ? htmlentities($string, $quoteStyle, $charset, $doubleEncode)
-                                       : htmlentities($string, $quoteStyle, $charset));
+            : htmlentities($string, $quoteStyle, $charset));
     }
 
     /**
@@ -146,7 +149,8 @@ class get {
      * @param string $charset Only valid options are UTF-8 and ISO-8859-1 (Latin-1)
      * @param boolean $doubleEncode
      */
-    protected static function initXhtmlentities($quoteStyle, $charset, $doubleEncode) {
+    protected static function initXhtmlentities($quoteStyle, $charset, $doubleEncode)
+    {
         $chars = get_html_translation_table(HTML_ENTITIES, $quoteStyle);
         if (isset($chars)) {
             unset($chars['<'], $chars['>']);
@@ -154,7 +158,7 @@ class get {
             $charMaps[$quoteStyle]['ISO-8859-1'][false] = array_combine(array_values($chars), $chars);
             $charMaps[$quoteStyle]['UTF-8'][true] = array_combine(array_map('utf8_encode', array_keys($chars)), $chars);
             $charMaps[$quoteStyle]['UTF-8'][false] = array_merge($charMaps[$quoteStyle]['ISO-8859-1'][false],
-                                                                 $charMaps[$quoteStyle]['UTF-8'][true]);
+                $charMaps[$quoteStyle]['UTF-8'][true]);
             self::$loadedObjects['xhtmlEntities'] = $charMaps;
         }
         if (!isset($charMaps[$quoteStyle][$charset][$doubleEncode])) {
@@ -163,7 +167,7 @@ class get {
             } else if (!isset($charMaps[$quoteStyle][$charset])) {
                 $invalidArgument = 'charset = ' . $charset;
             } else {
-                $invalidArgument = 'doubleEncode = ' . (string) $doubleEncode;
+                $invalidArgument = 'doubleEncode = ' . (string)$doubleEncode;
             }
             trigger_error('Undefined argument sent to xhtmlentities() method: ' . $invalidArgument, E_USER_NOTICE);
         }
@@ -181,11 +185,12 @@ class get {
      * @return string
      */
     public static function xhtmlentities($string, $quoteStyle = ENT_NOQUOTES, $charset = 'UTF-8',
-                                         $doubleEncode = false) {
+                                         $doubleEncode = false)
+    {
         $quoteStyles = array(ENT_NOQUOTES, ENT_QUOTES, ENT_COMPAT);
         $quoteStyle = (!in_array($quoteStyle, $quoteStyles) ? current($quoteStyles) : $quoteStyle);
         $charset = ($charset != 'ISO-8859-1' ? 'UTF-8' : $charset);
-        $doubleEncode = (Boolean) $doubleEncode;
+        $doubleEncode = (Boolean)$doubleEncode;
         if (!isset(self::$loadedObjects['xhtmlEntities'][$quoteStyle][$charset][$doubleEncode])) {
             self::initXhtmlentities($quoteStyle, $charset, $doubleEncode);
         }
@@ -199,7 +204,8 @@ class get {
      * @param string $objectName
      * @return object
      */
-    protected static function _loadObject($objectType, $objectName) {
+    protected static function _loadObject($objectType, $objectName)
+    {
         if (isset(self::$loadedObjects[$objectType][$objectName])) {
             return self::$loadedObjects[$objectType][$objectName];
         }
@@ -220,7 +226,8 @@ class get {
      * @param string $model
      * @return object
      */
-    public static function helper($helper) {
+    public static function helper($helper)
+    {
         if (is_array($helper)) {
             array_walk($helper, array('self', __METHOD__));
             return;
@@ -235,14 +242,16 @@ class get {
 /**
  * Public interface to load elements and cause redirects
  */
-class load {
+class load
+{
     /**
      * Sends a redirects header and disables view rendering
      * This redirects via a browser command, this is not the same as changing controllers which is handled within MVC
      *
      * @param string $url Optional, if undefined this will refresh the page (mostly useful for dumping post values)
      */
-    public static function redirect($url = null) {
+    public static function redirect($url = null)
+    {
         header('Location: ' . ($url ? $url : get::url(array('get' => true))));
     }
 }
@@ -250,22 +259,26 @@ class load {
 /**
  * Thrown when the mongod server is not accessible
  */
-class cannotConnectToMongoServer extends Exception {
-    public function __toString() {
+class cannotConnectToMongoServer extends Exception
+{
+    public function __toString()
+    {
         return '<h1>Cannot connect to the MongoDB database.</h1> ' . PHP_EOL . 'If Mongo is installed then be sure that'
-             . ' an instance of the "mongod" server, not "mongo" shell, is running. <br />' . PHP_EOL
-             . 'Instructions and database download: <a href="http://vork.us/go/fhk4">http://vork.us/go/fhk4</a>';
+            . ' an instance of the "mongod" server, not "mongo" shell, is running. <br />' . PHP_EOL
+            . 'Instructions and database download: <a href="http://vork.us/go/fhk4">http://vork.us/go/fhk4</a>';
     }
 }
 
 /**
  * Thrown when the mongo extension for PHP is not installed
  */
-class mongoExtensionNotInstalled extends Exception {
-    public function __toString() {
+class mongoExtensionNotInstalled extends Exception
+{
+    public function __toString()
+    {
         return '<h1>PHP cannot access MongoDB, you need to install the Mongo extension for PHP.</h1> '
-              . PHP_EOL . 'Instructions and driver download: '
-              . '<a href="http://vork.us/go/tv27">http://vork.us/go/tv27</a>';
+            . PHP_EOL . 'Instructions and driver download: '
+            . '<a href="http://vork.us/go/tv27">http://vork.us/go/tv27</a>';
     }
 }
 
@@ -705,13 +718,18 @@ class MongoAdminModel
      *
      * @param string $collection
      * @param string $obj
-     * @return array
+     * @return int
      */
     public function saveObject($collection, $obj)
     {
         $object = null;
         eval('$object = (object)' . $obj . ';'); //cast from string to array
-        return $this->mongo->selectCollection($collection)->insertOne($object)->getInsertedId();
+        if (isset($object->_id)) {
+            return $this->mongo->selectCollection($collection)
+                ->updateOne(['_id' => $object->_id], ['$set' => $object])->getModifiedCount();
+        } else {
+            return $this->mongo->selectCollection($collection)->insertOne($object)->getInsertedId();
+        }
     }
 
     /**
@@ -756,7 +774,8 @@ class MongoAdminModel
 /**
  * phpMoAdmin application control
  */
-class moadminComponent {
+class moadminComponent
+{
     /**
      * $this->mongo is used to pass properties from component to view without relying on a controller to return them
      * @var array
@@ -772,16 +791,18 @@ class moadminComponent {
     /**
      * Removes the POST/GET params
      */
-    protected function _dumpFormVals() {
+    protected function _dumpFormVals()
+    {
         load::redirect(get::url() . '?action=listRows&db=' . urlencode($_GET['db'])
-                     . '&collection=' . urlencode($_GET['collection']));
+            . '&collection=' . urlencode($_GET['collection']));
     }
 
     /**
      * Routes requests and sets return data
      * @throws Exception
      */
-    public function __construct() {
+    public function __construct()
+    {
         if (class_exists('mvc')) {
             mvc::$view = '#moadmin';
         }
@@ -794,7 +815,7 @@ class moadminComponent {
         }
 
         if (isset($_POST['limit'])) {
-            $_SESSION['limit'] = (int) $_POST['limit'];
+            $_SESSION['limit'] = (int)$_POST['limit'];
         } else if (!isset($_SESSION['limit'])) {
             $_SESSION['limit'] = OBJECT_LIMIT;
         }
@@ -815,7 +836,7 @@ class moadminComponent {
         } else if ($action == 'createCollection') {
             self::$model->$action($_GET['collection']);
         } else if ($action == 'renameCollection'
-                   && isset($_POST['collectionto']) && $_POST['collectionto'] != $_POST['collectionfrom']) {
+            && isset($_POST['collectionto']) && $_POST['collectionto'] != $_POST['collectionfrom']) {
             self::$model->$action($_POST['collectionfrom'], $_POST['collectionto']);
             $_GET['collection'] = $_POST['collectionto'];
             $action = 'listRows';
@@ -828,7 +849,7 @@ class moadminComponent {
         $this->mongo['listCollections'] = self::$model->listCollections();
         if ($action == 'editObject') {
             $this->mongo[$action] = (isset($_GET['_id'])
-                                     ? self::$model->$action($_GET['collection'], $_GET['_id'], $_GET['idtype']) : '');
+                ? self::$model->$action($_GET['collection'], $_GET['_id'], $_GET['idtype']) : '');
             return;
         } else if ($action == 'removeObject') {
             self::$model->$action($_GET['collection'], $_GET['_id'], $_GET['idtype']);
@@ -838,7 +859,7 @@ class moadminComponent {
                 $indexes[$field] = (isset($_GET['isdescending'][$key]) && $_GET['isdescending'][$key] ? -1 : 1);
             }
             self::$model->$action($_GET['collection'], $indexes, ($_GET['unique'] == 'Unique' ? array('unique' => true)
-                                                                                              : array()));
+                : array()));
             $action = 'listCollections';
         } else if ($action == 'deleteIndex') {
             self::$model->$action($_GET['collection'], unserialize($_GET['index']));
@@ -871,7 +892,8 @@ class moadminComponent {
 /**
  * HTML helper tools
  */
-class htmlHelper {
+class htmlHelper
+{
     /**
      * Internal storage of the link-prefix and hypertext protocol values
      * @var string
@@ -893,7 +915,8 @@ class htmlHelper {
     /**
      * Sets the protocol (http/https) - this is modified from the original Vork version for phpMoAdmin usage
      */
-    public function __construct() {
+    public function __construct()
+    {
         $this->_protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on' ? 'https://' : 'http://');
     }
 
@@ -919,7 +942,8 @@ class htmlHelper {
      * @return string
      * @throws Exception
      */
-    protected function _tagBuilder($tagType, $args = array()) {
+    protected function _tagBuilder($tagType, $args = array())
+    {
         $arg = current($args);
         if (empty($arg) || $arg === '') {
             $errorMsg = 'Missing argument for ' . __CLASS__ . '::' . $tagType . '()';
@@ -940,13 +964,13 @@ class htmlHelper {
                 case 'jqueryTheme':
                     if ($tagType == 'jqueryTheme') {
                         $arg = $this->_protocol . 'ajax.googleapis.com/ajax/libs/jqueryui/1/themes/'
-                             . str_replace(' ', '-', strtolower($arg)) . '/jquery-ui.css';
+                            . str_replace(' ', '-', strtolower($arg)) . '/jquery-ui.css';
                         $tagType = 'css';
                     }
                     if (!isset($this->_includedFiles[$tagType][$arg])) {
                         if ($tagType == 'css' || $tagType == 'cssSingleton') {
                             $return = '<link rel="stylesheet" type="text/css" href="' . $arg . '"'
-                                    . ' media="' . (isset($args[1]) ? $args[1] : 'all') . '" />';
+                                . ' media="' . (isset($args[1]) ? $args[1] : 'all') . '" />';
                         } else {
                             $return = '<script type="text/javascript" src="' . $arg . '"></script>';
                         }
@@ -960,21 +984,21 @@ class htmlHelper {
                     break;
                 case 'cssInline': //Optional extra argument to define CSS media type
                     $return = '<style type="text/css" media="' . (isset($args[1]) ? $args[1] : 'all') . '">'
-                            . PHP_EOL . '/*<![CDATA[*/'
-                            . PHP_EOL . '<!--'
-                            . PHP_EOL . $arg
-                            . PHP_EOL . '//-->'
-                            . PHP_EOL . '/*]]>*/'
-                            . PHP_EOL . '</style>';
+                        . PHP_EOL . '/*<![CDATA[*/'
+                        . PHP_EOL . '<!--'
+                        . PHP_EOL . $arg
+                        . PHP_EOL . '//-->'
+                        . PHP_EOL . '/*]]>*/'
+                        . PHP_EOL . '</style>';
                     break;
                 case 'jsInline':
                     $return = '<script type="text/javascript">'
-                            . PHP_EOL . '//<![CDATA['
-                            . PHP_EOL . '<!--'
-                            . PHP_EOL . $arg
-                            . PHP_EOL . '//-->'
-                            . PHP_EOL . '//]]>'
-                            . PHP_EOL . '</script>';
+                        . PHP_EOL . '//<![CDATA['
+                        . PHP_EOL . '<!--'
+                        . PHP_EOL . $arg
+                        . PHP_EOL . '//-->'
+                        . PHP_EOL . '//]]>'
+                        . PHP_EOL . '</script>';
                     break;
                 case 'jsInlineSingleton': //Optional extra argument to supress adding of inline JS/CSS wrapper
                 case 'cssInlineSingleton':
@@ -987,7 +1011,7 @@ class htmlHelper {
                             $this->vorkHead[$tagTypeBase . 'Inline'][] = $arg;
                         } else {
                             $return = (!isset($args[1]) || !$args[1] ? $this->{$tagTypeBase . 'Inline'}($arg)
-                                                                     : $arg . PHP_EOL);
+                                : $arg . PHP_EOL);
                         }
                     }
                     break;
@@ -1018,10 +1042,11 @@ class htmlHelper {
      * @return string
      * @throws Exception
      */
-    public function __call($method, $args) {
+    public function __call($method, $args)
+    {
         $validTags = array('css', 'js', 'cssSingleton', 'jsSingleton', 'jqueryTheme',
-                           'cssInline', 'jsInline', 'jsInlineSingleton', 'cssInlineSingleton',
-                           'div', 'li', 'p', 'h1', 'h2', 'h3', 'h4');
+            'cssInline', 'jsInline', 'jsInlineSingleton', 'cssInlineSingleton',
+            'div', 'li', 'p', 'h1', 'h2', 'h3', 'h4');
         if (in_array($method, $validTags)) {
             return $this->_tagBuilder($method, $args);
         } else {
@@ -1065,7 +1090,8 @@ class htmlHelper {
      *
      * @param string $docType
      */
-    public function setDocType($docType) {
+    public function setDocType($docType)
+    {
         $docType = str_replace(' ', '', strtolower($docType));
         if ($docType == 'xhtml1.1' || $docType == 'xhtml') {
             return; //XHTML 1.1 is the default
@@ -1074,21 +1100,21 @@ class htmlHelper {
         }
         $docType = str_replace(array('xhtml mobile', 'xhtml1.0'), array('mobile', ''), $docType);
         $docTypes = array(
-            'mobile1.2'    => '<!DOCTYPE html PUBLIC "-//WAPFORUM//DTD XHTML Mobile 1.2//EN" '
-                            . '"http://www.openmobilealliance.org/tech/DTD/xhtml-mobile12.dtd">',
-            'mobile1.1'    => '<!DOCTYPE html PUBLIC "-//WAPFORUM//DTD XHTML Mobile 1.1//EN '
-                            . '"http://www.openmobilealliance.org/tech/DTD/xhtml-mobile11.dtd">',
-            'mobile1.0'    => '<!DOCTYPE html PUBLIC "-//WAPFORUM//DTD XHTML Mobile 1.0//EN" '
-                            . '"http://www.wapforum.org/DTD/xhtml-mobile10.dtd">',
-            'strict'       => '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" '
-                           .  '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">',
+            'mobile1.2' => '<!DOCTYPE html PUBLIC "-//WAPFORUM//DTD XHTML Mobile 1.2//EN" '
+                . '"http://www.openmobilealliance.org/tech/DTD/xhtml-mobile12.dtd">',
+            'mobile1.1' => '<!DOCTYPE html PUBLIC "-//WAPFORUM//DTD XHTML Mobile 1.1//EN '
+                . '"http://www.openmobilealliance.org/tech/DTD/xhtml-mobile11.dtd">',
+            'mobile1.0' => '<!DOCTYPE html PUBLIC "-//WAPFORUM//DTD XHTML Mobile 1.0//EN" '
+                . '"http://www.wapforum.org/DTD/xhtml-mobile10.dtd">',
+            'strict' => '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" '
+                . '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">',
             'transitional' => '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" '
-                           .  '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">',
-            'frameset'     => '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Frameset//EN" '
-                           .  '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd">',
-            'html4.01'     => '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" '
-                           .  '"http://www.w3.org/TR/html4/strict.dtd">',
-            'html5'        => '<!DOCTYPE html>'
+                . '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">',
+            'frameset' => '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Frameset//EN" '
+                . '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd">',
+            'html4.01' => '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" '
+                . '"http://www.w3.org/TR/html4/strict.dtd">',
+            'html5' => '<!DOCTYPE html>'
         );
         $docTypes['mobile'] = $docTypes['mobile1.2'];
         $docTypes['html'] = $docTypes['html4.01'];
@@ -1111,14 +1137,15 @@ class htmlHelper {
      * @param array $args
      * @return string
      */
-    public function header(array $args) {
+    public function header(array $args)
+    {
         if (!$this->_bodyOpen) {
             $this->_bodyOpen = true;
             extract($args);
             $return = $this->_docType
-                    . PHP_EOL . '<html xmlns="http://www.w3.org/1999/xhtml">'
-                    . PHP_EOL . '<head>'
-                    . PHP_EOL . '<title>' . $title . '</title>';
+                . PHP_EOL . '<html xmlns="http://www.w3.org/1999/xhtml">'
+                . PHP_EOL . '<head>'
+                . PHP_EOL . '<title>' . $title . '</title>';
 
             if (!isset($metaheader['Content-Type'])) {
                 $metaheader['Content-Type'] = 'text/html; charset=utf-8';
@@ -1172,7 +1199,8 @@ class htmlHelper {
      * @param array $args
      * @return string
      */
-    public function footer(array $args = array()) {
+    public function footer(array $args = array())
+    {
         if ($this->_bodyOpen) {
             $this->_bodyOpen = false;
             return '</body></html>';
@@ -1200,7 +1228,8 @@ class htmlHelper {
      * @param Boolean $noJsWrapper set to True if calling from within a $html->jsInline() wrapper
      * @return string
      */
-    public function jsTools($noJsWrapper = false) {
+    public function jsTools($noJsWrapper = false)
+    {
         return $this->jsInlineSingleton("var vork = function() {}
 var dom = function(id) {
     if (typeof document.getElementById != 'undefined') {
@@ -1235,7 +1264,8 @@ var dom = function(id) {
      * @param array $options Optional, passed to Google "optionalSettings" argument, only used if $library == str
      * @return string
      */
-    public function jsLoad($library, $version = null, array $options = array()) {
+    public function jsLoad($library, $version = null, array $options = array())
+    {
         $versionDefaults = array('swfobject' => 2, 'yui' => 2, 'ext-core' => 3, 'mootools' => 1.2);
         if (!is_array($library)) { //jsLoad('yui')
             $library = strtolower($library);
@@ -1282,7 +1312,8 @@ var dom = function(id) {
      * @param array $properties
      * @return string
      */
-    public static function formatProperties(array $properties) {
+    public static function formatProperties(array $properties)
+    {
         $return = array();
         foreach ($properties as $name => $value) {
             $return[] = $name . '="' . get::htmlentities($value) . '"';
@@ -1296,7 +1327,8 @@ var dom = function(id) {
      * @param array $args
      * @return string
      */
-    public function anchor(array $args) {
+    public function anchor(array $args)
+    {
         if (!isset($args['text']) && isset($args['href'])) {
             $args['text'] = $args['href'];
         }
@@ -1323,7 +1355,8 @@ var dom = function(id) {
      * @param array $args
      * @return string
      */
-    public function link($href, $text = null, array $args = array()) {
+    public function link($href, $text = null, array $args = array())
+    {
         if (strpos($href, 'http') !== 0) {
             $href = $this->_linkPrefix . $href;
         }
@@ -1340,7 +1373,8 @@ var dom = function(id) {
      * @param string $str
      * @return string
      */
-    public function code($str) {
+    public function code($str)
+    {
         return '<code>' . str_replace('  ', '&nbsp;&nbsp;', nl2br(get::htmlentities($str))) . '</code>';
     }
 
@@ -1350,8 +1384,9 @@ var dom = function(id) {
      * @param int $number
      * @return boolean
      */
-    public function isEven($number) {
-        return (Boolean) ($number % 2 == 0);
+    public function isEven($number)
+    {
+        return (Boolean)($number % 2 == 0);
     }
 
     /**
@@ -1370,7 +1405,8 @@ var dom = function(id) {
      *
      * @return Boolean
      */
-    public function alternator() {
+    public function alternator()
+    {
         return $this->isEven(++$this->alternator);
     }
 
@@ -1382,7 +1418,8 @@ var dom = function(id) {
      * @param string $listType Optional, must be a valid HTML list type, either "ul" (default) or "ol"
      * @return string
      */
-    public function drillDownList(array $list, $kvDelimiter = ': ', $listType = 'ul') {
+    public function drillDownList(array $list, $kvDelimiter = ': ', $listType = 'ul')
+    {
         foreach ($list as $key => $val) {
             $val = (is_array($val) ? $this->drillDownList($val, $kvDelimiter, $listType) : $val);
             $str = trim($key && !is_int($key) ? $key . $kvDelimiter . $val : $val);
@@ -1392,8 +1429,8 @@ var dom = function(id) {
         }
         if (isset($return)) {
             return ($listType ? '<' . $listType . '>' : '')
-                 . implode(PHP_EOL, $return)
-                 . ($listType ? '</' . $listType . '>' : '');
+                . implode(PHP_EOL, $return)
+                . ($listType ? '</' . $listType . '>' : '');
         }
     }
 
@@ -1404,10 +1441,11 @@ var dom = function(id) {
      * @param string $class
      * @return string Returns null if there are no notifications to return
      */
-    public function getNotifications($messages, $class = 'errormessage') {
+    public function getNotifications($messages, $class = 'errormessage')
+    {
         if (isset($messages) && $messages) {
             return '<div class="' . $class . '">'
-                 . (is_array($messages) ? implode('<br />', $messages) : $messages) . '</div>';
+                . (is_array($messages) ? implode('<br />', $messages) : $messages) . '</div>';
         }
     }
 }
@@ -1415,7 +1453,8 @@ var dom = function(id) {
 /**
  * Vork form-helper
  */
-class formHelper {
+class formHelper
+{
     /**
      * Internal flag to keep track if a form tag has been opened and not yet closed
      * @var boolean
@@ -1434,7 +1473,8 @@ class formHelper {
      * @param string $name
      * @return string
      */
-    protected function _indexDynamicArray($name) {
+    protected function _indexDynamicArray($name)
+    {
         $dynamicArrayStart = strpos($name, '[]');
         if ($dynamicArrayStart) {
             $prefix = substr($name, 0, $dynamicArrayStart);
@@ -1460,7 +1500,8 @@ class formHelper {
      * @param array $propertyNames Optional, an array of user-defined properties
      * @return array
      */
-    protected function _getProperties(array $args, array $propertyNames = array()) {
+    protected function _getProperties(array $args, array $propertyNames = array())
+    {
         $method = (isset($this->_formOpen['method']) && $this->_formOpen['method'] == 'get' ? $_GET : $_POST);
         if (isset($args['name']) && (!isset($args['type']) || !in_array($args['type'], $this->_staticTypes))) {
             $arrayStart = strpos($args['name'], '[');
@@ -1506,14 +1547,15 @@ class formHelper {
      * @param array $args
      * @return string
      */
-    public function open(array $args = array()) {
+    public function open(array $args = array())
+    {
         if (!$this->_formOpen) {
             if (!isset($args['method'])) {
                 $args['method'] = 'post';
             }
 
             $this->_formOpen = array('id' => (isset($args['id']) ? $args['id'] : true),
-                                     'method' => $args['method']);
+                'method' => $args['method']);
 
             if (!isset($args['action'])) {
                 $args['action'] = $_SERVER['REQUEST_URI'];
@@ -1555,7 +1597,8 @@ class formHelper {
      *
      * @return string
      */
-    public function close() {
+    public function close()
+    {
         if ($this->_formOpen) {
             $this->_formOpen = false;
             return '</fieldset></form>';
@@ -1572,7 +1615,8 @@ class formHelper {
      * @param string $formElement
      * @return string
      */
-    protected function _getLabel(array $args, $formElement) {
+    protected function _getLabel(array $args, $formElement)
+    {
         if (!isset($args['label']) && isset($args['name'])
             && (!isset($args['type']) || !in_array($args['type'], $this->_staticTypes))) {
             $args['label'] = ucfirst($args['name']);
@@ -1586,7 +1630,7 @@ class formHelper {
             $labelFirst = (!isset($args['labelFirst']) || $args['labelFirst']);
             if (isset($args['id'])) {
                 $label = '<label for="' . $args['id'] . '" id="' . $args['id'] . 'label">'
-                       . $label . '</label>';
+                    . $label . '</label>';
             }
             if (isset($args['addBreak']) && $args['addBreak']) {
                 $label = ($labelFirst ? $label . '<br />' : '<br />' . $label);
@@ -1606,9 +1650,10 @@ class formHelper {
      * @param string $errorMessage Optional, you may want to leave this blank and populate dynamically via JavaScript
      * @return string
      */
-    public function getErrorMessageContainer($id, $errorMessage = '') {
+    public function getErrorMessageContainer($id, $errorMessage = '')
+    {
         return '<span class="errormessage" id="' . $id . 'errorwrapper">'
-             . get::htmlentities($errorMessage) . '</span>';
+            . get::htmlentities($errorMessage) . '</span>';
     }
 
     /**
@@ -1619,7 +1664,8 @@ class formHelper {
      * @param array $args
      * @return string
      */
-    public function input(array $args) {
+    public function input(array $args)
+    {
         $args['type'] = (isset($args['type']) ? $args['type'] : 'text');
 
         switch ($args['type']) {
@@ -1690,10 +1736,10 @@ class formHelper {
             $return[] = '<textarea ' . htmlHelper::formatProperties($properties);
             if (isset($maxlength)) {
                 $return[] = ' onkeyup="document.getElementById(\''
-                          . $properties['id'] . 'errorwrapper\').innerHTML = (this.value.length > '
-                          . $maxlength . ' ? \'Form content exceeds maximum length of '
-                          . $maxlength . ' characters\' : \'Length: \' + this.value.length + \' (maximum: '
-                          . $maxlength . ' characters)\')"';
+                    . $properties['id'] . 'errorwrapper\').innerHTML = (this.value.length > '
+                    . $maxlength . ' ? \'Form content exceeds maximum length of '
+                    . $maxlength . ' characters\' : \'Length: \' + this.value.length + \' (maximum: '
+                    . $maxlength . ' characters)\')"';
             }
             $return[] = '>';
             if (isset($value)) {
@@ -1717,8 +1763,8 @@ class formHelper {
                 . '<div id="livepreview_' . $properties['id'] . '" class="htmlpreview"></div>\');' . PHP_EOL
                 . 'if (dom("livepreview_' . $properties['id'] . '")) {' . PHP_EOL
                 . '    var updateLivePreview_' . $properties['id'] . ' = '
-                    . 'function() {dom("livepreview_' . $properties['id'] . '").innerHTML = '
-                        . 'dom("' . $properties['id'] . '").value};' . PHP_EOL
+                . 'function() {dom("livepreview_' . $properties['id'] . '").innerHTML = '
+                . 'dom("' . $properties['id'] . '").value};' . PHP_EOL
                 . '    dom("' . $properties['id'] . '").onkeyup = updateLivePreview_' . $properties['id'] . ';'
                 . ' updateLivePreview_' . $properties['id'] . '();' . PHP_EOL
                 . '}';
@@ -1746,7 +1792,8 @@ class formHelper {
      * @param array $args
      * @return string
      */
-    public function select(array $args) {
+    public function select(array $args)
+    {
         if (!isset($args['id'])) {
             $args['id'] = $args['name'];
         }
@@ -1769,13 +1816,13 @@ class formHelper {
 
         if (isset($args['leadingOptions'])) {
             $useValues = (key($args['leadingOptions']) !== 0
-                          || (isset($args['useValue']) && $args['useValue']));
+                || (isset($args['useValue']) && $args['useValue']));
             foreach ($args['leadingOptions'] as $value => $text) {
                 if (!$useValues) {
                     $value = $text;
                 }
                 $return .= '<option value="' . get::htmlentities($value) . '"';
-                if (in_array((string) $value, $values)) {
+                if (in_array((string)$value, $values)) {
                     $return .= ' selected="selected"';
                 }
                 $return .= '>' . get::htmlentities($text) . '</option>';
@@ -1790,7 +1837,7 @@ class formHelper {
                     if (isset($label)) {
                         $return .= ' label="' . get::htmlentities($label) . '"';
                     }
-                    if (in_array((string) $value, $values)) {
+                    if (in_array((string)$value, $values)) {
                         $return .= ' selected="selected"';
                     }
                     $return .= '>' . get::htmlentities($label) . '</option>';
@@ -1806,7 +1853,7 @@ class formHelper {
                     $value = $text;
                 }
                 $return .= '<option value="' . get::htmlentities($value) . '"';
-                if (in_array((string) $value, $values)) {
+                if (in_array((string)$value, $values)) {
                     $return .= ' selected="selected"';
                 }
                 $return .= '>' . get::htmlentities($text) . '</option>';
@@ -1818,7 +1865,7 @@ class formHelper {
         }
         $return = $this->_getLabel($args, $return);
         if (isset($args['error'])) {
-             $return .= $this->getErrorMessageContainer($args['id'], '<br />' . $args['error']);
+            $return .= $this->getErrorMessageContainer($args['id'], '<br />' . $args['error']);
         }
         return $return;
     }
@@ -1844,7 +1891,8 @@ class formHelper {
      * @param array $args
      * @return string
      */
-    public function radios(array $args) {
+    public function radios(array $args)
+    {
         $id = (isset($args['id']) ? $args['id'] : $args['name']);
         $properties = $this->_getProperties($args);
         if (isset($properties['value'])) {
@@ -1861,7 +1909,7 @@ class formHelper {
             $properties['value'] = $value;
             if (isset($checked) &&
                 ((($properties['type'] == 'radio' || !is_array($checked)) && $value == $checked)
-                 || ($properties['type'] == 'checkbox' && is_array($checked) && in_array((string) $value, $checked)))) {
+                    || ($properties['type'] == 'checkbox' && is_array($checked) && in_array((string)$value, $checked)))) {
                 $properties['checked'] = 'checked';
                 $rowClass = (!isset($properties['class']) ? 'checked' : $properties['class'] . ' checked');
             }
@@ -1878,7 +1926,7 @@ class formHelper {
         $this->{$properties['type'] == 'radio' ? 'radios' : 'checkboxes'} = $radios;
         $break = (!isset($args['optionBreak']) ? '<br />' : $args['optionBreak']);
         $addFieldset = (isset($args['addFieldset']) ? $args['addFieldset']
-                        : ((isset($args['label']) && $args['label']) || count($args['options']) > 1));
+            : ((isset($args['label']) && $args['label']) || count($args['options']) > 1));
         if ($addFieldset) {
             $return = '<fieldset id="' . $id . '">';
             if (isset($args['label'])) {
@@ -1903,7 +1951,8 @@ class formHelper {
      * @param array $args
      * @return string
      */
-    public function checkboxes(array $args) {
+    public function checkboxes(array $args)
+    {
         $args['type'] = 'checkbox';
         if (isset($args['value']) && !is_array($args['value'])) {
             $args['value'] = array($args['value']);
@@ -1925,7 +1974,8 @@ class formHelper {
      * @param array $args
      * @return mixed
      */
-    public function __call($name, array $args) {
+    public function __call($name, array $args)
+    {
         $inputShorthand = array('text', 'textarea', 'password', 'file', 'hidden', 'submit', 'button', 'image');
         if (in_array($name, $inputShorthand)) {
             $args[0]['type'] = $name;
@@ -1935,27 +1985,30 @@ class formHelper {
     }
 }
 
-class jsonHelper {
+class jsonHelper
+{
     /**
      * Outputs content in JSON format
      * @param mixed $content Can be a JSON string or an array of any data that will automatically be converted to JSON
      * @param string $filename Default filename within the user-prompt for saving the JSON file
      */
-    public function echoJson($content, $filename = null) {
+    public function echoJson($content, $filename = null)
+    {
         header('Cache-Control: no-cache, must-revalidate');
         header('Expires: Mon, 01 Jan 2000 01:00:00 GMT');
         header('Content-type: application/json');
         if ($filename) {
             header('Content-Disposition: attachment; filename=' . $filename);
         }
-        echo (!is_array($content) && !is_object($content) ? $content : json_encode($content));
+        echo(!is_array($content) && !is_object($content) ? $content : json_encode($content));
     }
 }
 
 /**
  * phpMoAdmin specific functionality
  */
-class phpMoAdmin {
+class phpMoAdmin
+{
     /**
      * Sets the depth limit for phpMoAdmin::getArrayKeys (and prevents an endless loop with self-referencing objects)
      */
@@ -1969,7 +2022,8 @@ class phpMoAdmin {
      * @param int $drillDownDepthCount
      * @return array
      */
-    public static function getArrayKeys(array $array, $path = '', $drillDownDepthCount = 0) {
+    public static function getArrayKeys(array $array, $path = '', $drillDownDepthCount = 0)
+    {
         $return = array();
         if ($drillDownDepthCount) {
             $path .= '.';
@@ -1991,7 +2045,8 @@ class phpMoAdmin {
      * @param mixed $val
      * @return mixed
      */
-    public static function stripslashes($val) {
+    public static function stripslashes($val)
+    {
         return (is_array($val) ? array_map(array('self', 'stripslashes'), $val) : stripslashes($val));
     }
 }
@@ -2028,7 +2083,7 @@ if ($isAuthenticated) {
     }
     try {
         moadminComponent::$model = new MongoAdminModel($_GET['db']);
-    } catch(Exception $e) {
+    } catch (Exception $e) {
         echo $e;
         exit(0);
     }
@@ -2218,17 +2273,17 @@ $formArgs = array('method' => 'get');
 //}
 echo $form->open($formArgs);
 echo $html->div($form->select(array('name' => 'db', 'options' => $mo->mongo['dbs'], 'label' => '', 'value' => $db,
-                                       'addBreak' => false))
-              . $form->submit(array('value' => 'Change database', 'class' => 'ui-state-hover'))
-              . ' <span style="font-size: xx-large;">' . get::htmlentities($db)
-              . '</span> [' . $html->link("javascript: mo.dropDatabase('"
-              . get::htmlentities($db) . "'); void(0);", 'drop database') . ']');
+        'addBreak' => false))
+    . $form->submit(array('value' => 'Change database', 'class' => 'ui-state-hover'))
+    . ' <span style="font-size: xx-large;">' . get::htmlentities($db)
+    . '</span> [' . $html->link("javascript: mo.dropDatabase('"
+        . get::htmlentities($db) . "'); void(0);", 'drop database') . ']');
 echo $form->close();
 
 $js = 'var mo = {}
 mo.urlEncode = function(str) {
     return escape(str)'
-        . '.replace(/\+/g, "%2B").replace(/%20/g, "+").replace(/\*/g, "%2A").replace(/\//g, "%2F").replace(/@/g, "%40");
+    . '.replace(/\+/g, "%2B").replace(/%20/g, "+").replace(/\*/g, "%2A").replace(/\//g, "%2F").replace(/@/g, "%40");
 }
 //mo.repairDatabase = function(db) {
 //    mo.confirm("Are you sure that you want to repair and compact the " + db + " database?", function() {
@@ -2238,8 +2293,8 @@ mo.urlEncode = function(str) {
 mo.dropDatabase = function(db) {
     mo.confirm("Are you sure that you want to drop the " + db + " database?", function() {
         mo.confirm("All the collections in the " + db + " database will be lost along with all the data within them!'
-                . '\n\nAre you 100% sure that you want to drop this database?'
-                . '\n\nLast chance to cancel!", function() {
+    . '\n\nAre you 100% sure that you want to drop this database?'
+    . '\n\nLast chance to cancel!", function() {
             window.location.replace("' . $baseUrl . '?db=' . $dbUrl . '&action=dropDb");
         });
     });
@@ -2247,7 +2302,7 @@ mo.dropDatabase = function(db) {
 if (!MongoAdminModel::$databaseWhitelist) {
     $js .= '
 $("select[name=db]").prepend(\'<option value="new.database">Use new ==&gt;</option>\')'
-    . '.after(\'<input type="text" name="newdb" name style="display: none;" />\').change(function() {
+        . '.after(\'<input type="text" name="newdb" name style="display: none;" />\').change(function() {
     ($(this).val() == "new.database" ? $("input[name=newdb]").show() : $("input[name=newdb]").hide());
 });';
 }
@@ -2277,10 +2332,10 @@ if (isset($mo->mongo['listCollections'])) {
 
     echo $form->open(array('method' => 'get'));
     echo $html->div($form->input(array('name' => 'collection', 'label' => '', 'addBreak' => false))
-       . $form->hidden(array('name' => 'action', 'value' => 'createCollection'))
-       . $form->submit(array('value' => 'Add new collection', 'class' => 'ui-state-hover'))
-       . $form->hidden(array('name' => 'db', 'value' => get::htmlentities($db)))
-       . ' &nbsp; &nbsp; &nbsp; [' . $html->link($baseUrl . '?action=getStats', 'stats') . ']');
+        . $form->hidden(array('name' => 'action', 'value' => 'createCollection'))
+        . $form->submit(array('value' => 'Add new collection', 'class' => 'ui-state-hover'))
+        . $form->hidden(array('name' => 'db', 'value' => get::htmlentities($db)))
+        . ' &nbsp; &nbsp; &nbsp; [' . $html->link($baseUrl . '?action=getStats', 'stats') . ']');
     echo $form->close();
 
     if (!$mo->mongo['listCollections']) {
@@ -2289,8 +2344,8 @@ if (isset($mo->mongo['listCollections'])) {
         echo '<ol>';
         foreach ($mo->mongo['listCollections'] as $col => $rowCount) {
             echo $html->li($html->link($baseUrl . '?db='
-                                     . $dbUrl . '&action=listRows&collection=' . urlencode($col), $col)
-                         . ' <span title="' . $rowCount . ' objects">(' . number_format($rowCount) . ')</span>');
+                    . $dbUrl . '&action=listRows&collection=' . urlencode($col), $col)
+                . ' <span title="' . $rowCount . ' objects">(' . number_format($rowCount) . ')</span>');
         }
         echo '</ol>';
         echo $html->jsInline('mo.collectionDrop = function(collection) {
@@ -2298,10 +2353,10 @@ if (isset($mo->mongo['listCollections'])) {
     mo.confirm("Are you sure that you want to drop " + collection + "?",
         function() {
             mo.confirm("All the data in the " + mo.confirm.collection + " collection will be lost;'
-                    . ' are you 100% sure that you want to drop it?\n\nLast chance to cancel!",
+            . ' are you 100% sure that you want to drop it?\n\nLast chance to cancel!",
                 function() {
                     window.location.replace("' . $baseUrl . '?db=' . $dbUrl
-                                          . '&action=dropCollection&collection=" + mo.urlEncode(mo.confirm.collection));
+            . '&action=dropCollection&collection=" + mo.urlEncode(mo.confirm.collection));
                 }
             );
         }
@@ -2310,7 +2365,7 @@ if (isset($mo->mongo['listCollections'])) {
 $(document).ready(function() {
     $("#mongo_collections li").each(function() {
         $(this).prepend("[<a href=\"javascript: mo.collectionDrop(\'" + $(this).find("a").html() + "\'); void(0);\"'
-        . ' title=\"drop this collection\" class=\"text-danger\">X</a>] ");
+            . ' title=\"drop this collection\" class=\"text-danger\">X</a>] ");
     });
 });
 ');
@@ -2320,22 +2375,22 @@ $(document).ready(function() {
         $url .= '&collection=' . urlencode($collection);
     }
     echo $form->open(array('action' => $url, 'style' => 'width: 80px; height: 20px;'))
-           . $form->input(array('name' => 'limit', 'value' => $_SESSION['limit'], 'label' => '', 'addBreak' => false,
-                                   'style' => 'width: 40px;'))
-           . $form->submit(array('value' => 'limit', 'class' => 'ui-state-hover'))
-           . $form->close();
+        . $form->input(array('name' => 'limit', 'value' => $_SESSION['limit'], 'label' => '', 'addBreak' => false,
+            'style' => 'width: 40px;'))
+        . $form->submit(array('value' => 'limit', 'class' => 'ui-state-hover'))
+        . $form->close();
     echo '</div>';
 }
 echo '</div>'; //end of dbcollnav
 $dbcollnavJs = '$("#dbcollnav").after(\'<a id="dbcollnavlink" href="javascript: $(\\\'#dbcollnav\\\').show();'
-             . ' $(\\\'#dbcollnavlink\\\').hide(); void(0);">[Show Database &amp; Collection selection]</a>\').hide();';
+    . ' $(\\\'#dbcollnavlink\\\').hide(); void(0);">[Show Database &amp; Collection selection]</a>\').hide();';
 if (isset($mo->mongo['listRows'])) {
     echo $form->open(array('action' => $baseUrl . '?db=' . $dbUrl . '&action=renameCollection',
-                                  'style' => 'width: 600px; display: none;', 'id' => 'renamecollectionform'))
-       . $form->hidden(array('name' => 'collectionfrom', 'value' => $collection))
-       . $form->input(array('name' => 'collectionto', 'value' => $collection, 'label' => '', 'addBreak' => false))
-       . $form->submit(array('value' => 'Rename Collection', 'class' => 'ui-state-hover'))
-       . $form->close();
+            'style' => 'width: 600px; display: none;', 'id' => 'renamecollectionform'))
+        . $form->hidden(array('name' => 'collectionfrom', 'value' => $collection))
+        . $form->input(array('name' => 'collectionto', 'value' => $collection, 'label' => '', 'addBreak' => false))
+        . $form->submit(array('value' => 'Rename Collection', 'class' => 'ui-state-hover'))
+        . $form->close();
     $js = "$('#collectionname').hide(); $('#renamecollectionform').show(); void(0);";
     echo '<h1 id="collectionname">' . $html->link('javascript: ' . $js, $collection) . '</h1>';
 
@@ -2343,19 +2398,19 @@ if (isset($mo->mongo['listRows'])) {
         echo '<ol id="indexes" style="display: none; margin-bottom: 10px;">';
         echo $form->open(array('method' => 'get'));
         echo '<div id="indexInput">'
-           . $form->input(array('name' => 'index[]', 'label' => '', 'addBreak' => false))
-           . $form->checkboxes(array('name' => 'isdescending[]', 'options' => array('Descending')))
-           . '</div>'
-           . '<a id="addindexcolumn" style="margin-left: 160px;" href="javascript: '
-           . "$('#addindexcolumn').before('<div>' + $('#indexInput').html().replace(/isdescending_Descending/g, "
-           . "'isdescending_Descending' + mo.indexCount++) + '</div>'); void(0);"
-           . '">[Add another index field]</a>'
-           . $form->radios(array('name' => 'unique', 'options' => array('Index', 'Unique'), 'value' => 'Index'))
-           . $form->submit(array('value' => 'Add new index', 'class' => 'ui-state-hover'))
-           . $form->hidden(array('name' => 'action', 'value' => 'ensureIndex'))
-           . $form->hidden(array('name' => 'db', 'value' => get::htmlentities($db)))
-           . $form->hidden(array('name' => 'collection', 'value' => $collection))
-           . $form->close();
+            . $form->input(array('name' => 'index[]', 'label' => '', 'addBreak' => false))
+            . $form->checkboxes(array('name' => 'isdescending[]', 'options' => array('Descending')))
+            . '</div>'
+            . '<a id="addindexcolumn" style="margin-left: 160px;" href="javascript: '
+            . "$('#addindexcolumn').before('<div>' + $('#indexInput').html().replace(/isdescending_Descending/g, "
+            . "'isdescending_Descending' + mo.indexCount++) + '</div>'); void(0);"
+            . '">[Add another index field]</a>'
+            . $form->radios(array('name' => 'unique', 'options' => array('Index', 'Unique'), 'value' => 'Index'))
+            . $form->submit(array('value' => 'Add new index', 'class' => 'ui-state-hover'))
+            . $form->hidden(array('name' => 'action', 'value' => 'ensureIndex'))
+            . $form->hidden(array('name' => 'db', 'value' => get::htmlentities($db)))
+            . $form->hidden(array('name' => 'collection', 'value' => $collection))
+            . $form->close();
         foreach ($mo->mongo['listIndexes'] as $indexArray) {
             $index = '';
             foreach ($indexArray['key'] as $key => $direction) {
@@ -2369,13 +2424,13 @@ if (isset($mo->mongo['listRows'])) {
             }
             if (key($indexArray['key']) != '_id' || count($indexArray['key']) !== 1) {
                 $index = '[' . $html->link($baseUrl . '?db=' . $dbUrl . '&collection=' . urlencode($collection)
-                       . '&action=deleteIndex&index='
-                       . serialize($indexArray['key']), 'X', array('title' => 'Drop Index',
-                             'onclick' => "mo.confirm.href=this.href; "
-                                        . "mo.confirm('Are you sure that you want to drop this index?', "
-                                        . "function() {window.location.replace(mo.confirm.href);}); return false;")
-                         ) . '] '
-                       . $index;
+                        . '&action=deleteIndex&index='
+                        . serialize($indexArray['key']), 'X', array('title' => 'Drop Index',
+                            'onclick' => "mo.confirm.href=this.href; "
+                                . "mo.confirm('Are you sure that you want to drop this index?', "
+                                . "function() {window.location.replace(mo.confirm.href);}); return false;")
+                    ) . '] '
+                    . $index;
             }
             echo '<li>' . $index . '</li>';
         }
@@ -2384,9 +2439,9 @@ if (isset($mo->mongo['listRows'])) {
 
     echo '<ul id="export" style="display: none; margin-bottom: 10px;">';
     echo $html->li($html->link(get::url(array('get' => true)) . '&export=nolimit',
-                   'Export full results of this query (ignoring limit and skip clauses)'));
+        'Export full results of this query (ignoring limit and skip clauses)'));
     echo $html->li($html->link(get::url(array('get' => true)) . '&export=limited',
-                   'Export exactly the results visible on this page'));
+        'Export exactly the results visible on this page'));
     echo '</ul>';
 
     echo '<div id="import" style="display: none; margin-bottom: 10px;">';
@@ -2410,19 +2465,19 @@ if (isset($mo->mongo['listRows'])) {
         unset($get['skip']);
         $url = $baseUrl . '?' . http_build_query($get) . '&collection=' . urlencode($collection) . '&skip=';
         $paginator = number_format($skip + 1) . '-' . number_format(min($skip + $objCount, $mo->mongo['count']))
-                   . ' of ' . $paginator;
+            . ' of ' . $paginator;
         $remainder = ($mo->mongo['count'] % $_SESSION['limit']);
         $lastPage = ($mo->mongo['count'] - ($remainder ? $remainder : $_SESSION['limit']));
         $isLastPage = ($mo->mongo['count'] <= ($objCount + $skip));
         if ($skip) { //back
             $backPage = (!$isLastPage ? max($skip - $objCount, 0) : ($lastPage - $_SESSION['limit']));
             $backLinks = $html->link($url . 0, '{{', array('title' => 'First')) . ' '
-                       . $html->link($url . $backPage, '&lt;&lt;&lt;', array('title' => 'Previous'));
+                . $html->link($url . $backPage, '&lt;&lt;&lt;', array('title' => 'Previous'));
             $paginator = addslashes($backLinks) . ' ' . $paginator;
         }
         if (!$isLastPage) { //forward
             $forwardLinks = $html->link($url . ($skip + $objCount), '&gt;&gt;&gt;', array('title' => 'Next')) . ' '
-                          . $html->link($url . $lastPage, '}}', array('title' => 'Last'));
+                . $html->link($url . $lastPage, '}}', array('title' => 'Last'));
             $paginator .= ' ' . addslashes($forwardLinks);
         }
     }
@@ -2437,18 +2492,18 @@ if (isset($mo->mongo['listRows'])) {
     echo $html->jsInline('mo.indexCount = 1;
 $(document).ready(function() {
     $("#mongo_rows").prepend("<div style=\"float: right; line-height: 1.5; margin-top: -45px\">'
-    . '[<a href=\"javascript: $(\'#mongo_rows\').find(\'pre\').height(\'100px\').css(\'overflow\', \'auto\');'
-    . ' void(0);\" title=\"display compact view of row content\">Compact</a>] '
-    . '[<a href=\"javascript: $(\'#mongo_rows\').find(\'pre\').height(\'300px\').css(\'overflow\', \'auto\');'
-    . ' void(0);\" title=\"display uniform-view row content\">Uniform</a>] '
-    . '[<a href=\"javascript: $(\'#mongo_rows\').find(\'pre\').height(\'auto\').css(\'overflow\', \'hidden\');'
-    . ' void(0);\" title=\"display full row content\">Full</a>]'
-    . '<div class=\"ui-widget-header\" style=\"padding-left: 5px;\">' . $paginator . '</div></div>");
+        . '[<a href=\"javascript: $(\'#mongo_rows\').find(\'pre\').height(\'100px\').css(\'overflow\', \'auto\');'
+        . ' void(0);\" title=\"display compact view of row content\">Compact</a>] '
+        . '[<a href=\"javascript: $(\'#mongo_rows\').find(\'pre\').height(\'300px\').css(\'overflow\', \'auto\');'
+        . ' void(0);\" title=\"display uniform-view row content\">Uniform</a>] '
+        . '[<a href=\"javascript: $(\'#mongo_rows\').find(\'pre\').height(\'auto\').css(\'overflow\', \'hidden\');'
+        . ' void(0);\" title=\"display full row content\">Full</a>]'
+        . '<div class=\"ui-widget-header\" style=\"padding-left: 5px;\">' . $paginator . '</div></div>");
 });
 mo.removeObject = function(_id, idType) {
     mo.confirm("Are you sure that you want to delete this " + _id + " object?", function() {
         window.location.replace("' . $baseUrl . '?db=' . $dbUrl . '&collection=' . urlencode($collection)
-                              . '&action=removeObject&_id=" + mo.urlEncode(_id) + "&idtype=" + idType);
+        . '&action=removeObject&_id=" + mo.urlEncode(_id) + "&idtype=" + idType);
     });
 }
 ' . $dbcollnavJs . "
@@ -2468,7 +2523,7 @@ mo.submitQuery = function() {
     echo '<div id="mongo_rows">';
     echo $form->open(array('method' => 'get', 'onsubmit' => 'mo.submitSearch(); return false;'));
     echo '[' . $html->link($baseUrl . '?db=' . $dbUrl . '&collection=' . urlencode($collection) . '&action=editObject',
-                          'insert new object') . '] ';
+            'insert new object') . '] ';
     if (isset($index)) {
         $jsShowIndexes = "javascript: $('#indexeslink').hide(); $('#indexes').show(); void(0);";
         echo $html->link($jsShowIndexes, '[show indexes]', array('id' => 'indexeslink')) . ' ';
@@ -2485,15 +2540,15 @@ mo.submitQuery = function() {
         unset($colKeys['_id']);
         natcasesort($colKeys);
         $sort = array('name' => 'sort', 'id' => 'sort', 'options' => $colKeys, 'label' => '',
-                      'leadingOptions' => array('_id' => '_id', '$natural' => '$natural'), 'addBreak' => false);
+            'leadingOptions' => array('_id' => '_id', '$natural' => '$natural'), 'addBreak' => false);
         $sortdir = array('name' => 'sortdir', 'id' => 'sortdir', 'options' => array(1 => 'asc', -1 => 'desc'));
         $sortdir = array_merge($sortdir, $inlineFormArgs);
         $formInputs = $form->select($sort) . $form->select($sortdir) . ' '
-                    . $html->link("javascript: mo.submitSort(); void(0);", 'Sort', $linkSubmitArgs);
+            . $html->link("javascript: mo.submitSort(); void(0);", 'Sort', $linkSubmitArgs);
         if (!isset($_GET['sort']) || !$_GET['sort']) {
             $jsLink = "javascript: $('#sortlink').hide(); $('#sortform').show(); void(0);";
             $formInputs = $html->link($jsLink, '[sort]', array('id' => 'sortlink')) . ' '
-                        . '<div id="sortform" style="display: none;">' . $formInputs . '</div>';
+                . '<div id="sortform" style="display: none;">' . $formInputs . '</div>';
         } else {
             $formInputs = $html->div($formInputs);
         }
@@ -2502,17 +2557,17 @@ mo.submitQuery = function() {
         $search = array('name' => 'search', 'id' => 'search', 'style' => 'width: 300px;');
         $search = array_merge($search, $inlineFormArgs);
         $searchField = array('name' => 'searchField', 'id' => 'searchField', 'options' => $colKeys,
-                             'leadingOptions' => array('_id' => '_id'));
+            'leadingOptions' => array('_id' => '_id'));
         $searchField = array_merge($searchField, $inlineFormArgs);
 
         $linkSubmitArgs['title'] = 'Search may be a exact-text, (type-casted) value, (mongoid) 4c6...80c,'
-                                 . ' text with * wildcards, regex or JSON (with Mongo-operators enabled)';
+            . ' text with * wildcards, regex or JSON (with Mongo-operators enabled)';
         $formInputs = $form->select($searchField) . $form->input($search) . ' '
-                    . $html->link("javascript: mo.submitSearch(); void(0);", 'Search', $linkSubmitArgs);
+            . $html->link("javascript: mo.submitSearch(); void(0);", 'Search', $linkSubmitArgs);
         if (!isset($_GET['search']) || !$_GET['search']) {
             $jsLink = "javascript: $('#searchlink').hide(); $('#searchform').show(); void(0);";
             $formInputs = $html->link($jsLink, '[search]', array('id' => 'searchlink')) . ' '
-                        . '<div id="searchform" style="display: none;">' . $formInputs . '</div>';
+                . '<div id="searchform" style="display: none;">' . $formInputs . '</div>';
         } else {
             $formInputs = $html->div($formInputs);
         }
@@ -2523,11 +2578,11 @@ mo.submitQuery = function() {
     $query = array('name' => 'find', 'id' => 'find', 'style' => 'width: 600px;');
     $query = array_merge($query, $inlineFormArgs);
     $formInputs = $form->textarea($query) . ' '
-                . $html->link("javascript: mo.submitQuery(); void(0);", 'Query', $linkSubmitArgs);
+        . $html->link("javascript: mo.submitQuery(); void(0);", 'Query', $linkSubmitArgs);
     if (!isset($_GET['find']) || !$_GET['find']) {
         $jsLink = "javascript: $('#querylink').hide(); $('#queryform').show(); void(0);";
         $formInputs = $html->link($jsLink, '[query]', array('id' => 'querylink')) . ' '
-                    . '<div id="queryform" style="display: none;">' . $formInputs . '</div>';
+            . '<div id="queryform" style="display: none;">' . $formInputs . '</div>';
     } else {
         $formInputs = $html->div($formInputs);
     }
@@ -2540,7 +2595,7 @@ mo.submitQuery = function() {
     $isChunksTable = (substr($collection, -7) == '.chunks');
     if ($isChunksTable) {
         $chunkUrl = $baseUrl . '?db=' . $dbUrl . '&action=listRows&collection=' . urlencode(substr($collection, 0, -7))
-                  . '.files#';
+            . '.files#';
     }
     foreach ($mo->mongo['listRows'] as $row) {
         $showEdit = true;
@@ -2559,7 +2614,7 @@ mo.submitQuery = function() {
             && get_class($row['data']) == 'MongoBinData') {
             $showEdit = false;
             $row['data'] = $html->link($chunkUrl . $row['files_id'], 'MongoBinData Object',
-                                       array('class' => 'MoAdmin_Reference'));
+                array('class' => 'MoAdmin_Reference'));
         }
         $data = explode("\n", substr(print_r($row, true), 8, -2));
         $binData = 0;
@@ -2584,7 +2639,7 @@ mo.submitQuery = function() {
                     $binData = -2;
                 }
                 $data[$id] = str_replace('        ', '    ', (substr($rowData, 0, 4) === '    ' ? substr($rowData, 4)
-                                                                                                : $rowData));
+                    : $rowData));
                 if ($raw === ')') {
                     $data[$id] = substr($data[$id], 4);
                 }
@@ -2593,15 +2648,15 @@ mo.submitQuery = function() {
                 }
             }
         }
-        echo  $html->li('<div style="margin-top: 5px; padding-left: 5px;" class="'
-           . ($html->alternator() ? 'ui-widget-header' : 'ui-widget-content') . '" id="' . $row['_id'] . '">'
-           . '[' . $html->link("javascript: mo.removeObject('" . $idForUrl . "', '" . $idType
-           . "'); void(0);", 'X', array('title' => 'Delete')) . '] '
-           . ($showEdit ? '[' . $html->link($baseUrl . '?db=' . $dbUrl . '&collection=' . urlencode($collection)
-                . '&action=editObject&_id=' . $idForUrl . '&idtype=' . $idType, 'E', array('title' => 'Edit')) . '] '
+        echo $html->li('<div style="margin-top: 5px; padding-left: 5px;" class="'
+            . ($html->alternator() ? 'ui-widget-header' : 'ui-widget-content') . '" id="' . $row['_id'] . '">'
+            . '[' . $html->link("javascript: mo.removeObject('" . $idForUrl . "', '" . $idType
+                . "'); void(0);", 'X', array('title' => 'Delete')) . '] '
+            . ($showEdit ? '[' . $html->link($baseUrl . '?db=' . $dbUrl . '&collection=' . urlencode($collection)
+                    . '&action=editObject&_id=' . $idForUrl . '&idtype=' . $idType, 'E', array('title' => 'Edit')) . '] '
                 : ' [<span title="Cannot edit objects containing MongoBinData">N/A</span>] ')
-           . $idString . '<div class="rownumber">' . number_format(++$rowCount) . '</div></div><pre>'
-           . wordwrap(implode("\n", $data), 136, "\n", true) . '</pre>');
+            . $idString . '<div class="rownumber">' . number_format(++$rowCount) . '</div></div><pre>'
+            . wordwrap(implode("\n", $data), 136, "\n", true) . '</pre>');
     }
     echo '</ol>';
     if (!isset($idString)) {
@@ -2620,19 +2675,19 @@ mo.submitQuery = function() {
     echo $html->div($form->submit(array('value' => 'Save Changes', 'class' => 'ui-state-hover')));
     $textarea = array('name' => 'object', 'label' => '');
     $textarea['value'] = ($mo->mongo['editObject'] !== '' ? var_export($mo->mongo['editObject'], true)
-                                                          : 'array (' . PHP_EOL . PHP_EOL . ')');
+        : 'array (' . PHP_EOL . PHP_EOL . ')');
     //MongoID as _id
     $textarea['value'] = preg_replace('/\'_id\' => \s*MongoId::__set_state\(array\(\s*\)\)/', '\'_id\' => new MongoId("'
-                                      . (isset($_GET['_id']) ? $_GET['_id'] : '') . '")', $textarea['value']);
+        . (isset($_GET['_id']) ? $_GET['_id'] : '') . '")', $textarea['value']);
     //MongoID in all other occurrences, original ID is not maintained
     $textarea['value'] = preg_replace('/MongoId::__set_state\(array\(\s*\)\)/', 'new MongoId()', $textarea['value']);
     //MongoDate
     $textarea['value'] = preg_replace('/MongoDate::__set_state\(array\(\s*\'sec\' => (\d+),\s*\'usec\' => \d+,\s*\)\)/m',
-                                      'new MongoDate($1)', $textarea['value']);
+        'new MongoDate($1)', $textarea['value']);
     echo $html->div($form->textarea($textarea)
-       . $form->hidden(array('name' => 'action', 'value' => 'editObject')));
+        . $form->hidden(array('name' => 'action', 'value' => 'editObject')));
     echo $html->div($form->hidden(array('name' => 'db', 'value' => get::htmlentities($db)))
-       . $form->submit(array('value' => 'Save Changes', 'class' => 'ui-state-hover')));
+        . $form->submit(array('value' => 'Save Changes', 'class' => 'ui-state-hover')));
     echo $form->close();
     echo $html->jsInline('$("textarea[name=object]").css({"min-width": "750px", "max-width": "1250px", '
         . '"min-height": "450px", "max-height": "2000px", "width": "auto", "height": "auto"}).resizable();
